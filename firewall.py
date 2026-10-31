@@ -7,6 +7,10 @@ stats = { #counts the number of incoming packets, the blocked packets and allowe
     "blocked": 0
 }
 
+global packet_count #used for counting packets per second to get network traffic
+packet_count = 0
+start_time = time.time()
+
 rules = [ {"protocol": "TCP", "port": 22}, #blocks SSH
     {"protocol": "UDP", "port": 53}, #blocks DNS
     {"ip": "172.16.5.20"} ] #blocks a specific generic IP
@@ -34,11 +38,21 @@ def packet_matches_rule(pkt, rule): #returns true if a packet goes against one o
 
 def packet_check(pkt):
     stats["total"] += 1
+    time_difference = time.time() - start_time
+
     for rule in rules: #iterates through each rule 
         if packet_matches_rule(pkt, rule): 
             stats["blocked"] += 1
             print(f"BLOCKED {pkt.summary()}")
             return  #this is so that the packet gets ignored 
+
+    if time_difference >= 1:
+        pps = packet_count/time_difference #calculates total incoming packets per second
+
+        #resets time_difference and packet_count
+        packet_count = 0 
+        start_time = time.time()
+
     stats["allowed"] += 1
     print(f"ALLOWED {pkt.summary()}") # Ifno rules matched allow it
 
