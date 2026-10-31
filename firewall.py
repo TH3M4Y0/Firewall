@@ -1,4 +1,11 @@
 from scapy.all import * 
+import time
+
+stats = { #counts the number of incoming packets, the blocked packets and allowed ones
+    "total": 0,
+    "allowed": 0,
+    "blocked": 0
+}
 
 rules = [ {"protocol": "TCP", "port": 22}, #blocks SSH
     {"protocol": "UDP", "port": 53}, #blocks DNS
@@ -22,17 +29,18 @@ def packet_matches_rule(pkt, rule): #returns true if a packet goes against one o
         if proto == "UDP" and pkt.haslayer(UDP): 
             if pkt[UDP].sport == port or pkt[UDP].dport == port:
                 return True
-
+            
     return False
 
 def packet_check(pkt):
+    stats["total"] += 1
     for rule in rules: #iterates through each rule 
         if packet_matches_rule(pkt, rule): 
+            stats["blocked"] += 1
             print(f"BLOCKED {pkt.summary()}")
             return  #this is so that the packet gets ignored 
-
-    # If no rule matched, allow it
-    print(f"ALLOWED {pkt.summary()}")
+    stats["allowed"] += 1
+    print(f"ALLOWED {pkt.summary()}") # Ifno rules matched allow it
 
 def firewall_main():
     print("Firewall has started up.") #informing user that firewall has started
