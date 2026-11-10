@@ -8,6 +8,8 @@ stats = { #counts the number of incoming packets, the blocked packets and allowe
     "pps": 0
 }
 
+filename = "firewall.log"
+
 packet_count = 0 #used for counting packets per second to get network traffic
 start_time = time.time()
 
@@ -43,15 +45,18 @@ def packet_check(pkt):
     stats["total"] += 1
     time_difference = time.time() - start_time
 
-    for rule in rules: #iterates through each rule 
-        if packet_matches_rule(pkt, rule): 
-            stats["blocked"] += 1
-            print(f"BLOCKED {pkt.summary()}")
-            return  #this is so that the packet gets ignored 
 
-    packet_count +=1
-    stats["allowed"] += 1
-    print(f"ALLOWED {pkt.summary()}") # Ingo rules matched allow it
+    with open(filename, "a") as file:
+        for rule in rules: #iterates through each rule 
+            if packet_matches_rule(pkt, rule): 
+                stats["blocked"] += 1
+
+                file.write(f"BLOCKED {pkt.summary()}"+ "\n" )
+                return  #this is so that the packet gets ignored 
+
+        packet_count +=1
+        stats["allowed"] += 1 
+        file.write(f"ALLOWED {pkt.summary()}"+"\n") # Ingo rules matched allow it
 
     if time_difference >= 1:
         pps = packet_count/time_difference #calculates total incoming packets per second
